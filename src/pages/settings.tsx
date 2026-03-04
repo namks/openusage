@@ -26,12 +26,14 @@ import {
   MENUBAR_ICON_STYLE_OPTIONS,
   RESET_TIMER_DISPLAY_OPTIONS,
   THEME_OPTIONS,
+  TRAY_METRIC_OPTIONS,
   type AutoUpdateIntervalMinutes,
   type DisplayMode,
   type GlobalShortcut,
   type MenubarIconStyle,
   type ResetTimerDisplayMode,
   type ThemeMode,
+  type TrayMetric,
 } from "@/lib/settings";
 import type { TraySettingsPreview } from "@/hooks/app/use-tray-icon";
 import { cn } from "@/lib/utils";
@@ -265,6 +267,8 @@ interface SettingsPageProps {
   onResetTimerDisplayModeChange: (value: ResetTimerDisplayMode) => void;
   menubarIconStyle: MenubarIconStyle;
   onMenubarIconStyleChange: (value: MenubarIconStyle) => void;
+  trayMetric: TrayMetric;
+  onTrayMetricChange: (value: TrayMetric) => void;
   traySettingsPreview: TraySettingsPreview;
   globalShortcut: GlobalShortcut;
   onGlobalShortcutChange: (value: GlobalShortcut) => void;
@@ -286,6 +290,8 @@ export function SettingsPage({
   onResetTimerDisplayModeChange,
   menubarIconStyle,
   onMenubarIconStyleChange,
+  trayMetric,
+  onTrayMetricChange,
   traySettingsPreview,
   globalShortcut,
   onGlobalShortcutChange,
@@ -433,6 +439,33 @@ export function SettingsPage({
                     isActive={isActive}
                     traySettingsPreview={traySettingsPreview}
                   />
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+      <section>
+        <h3 className="text-lg font-semibold mb-0">Tray Metric</h3>
+        <p className="text-sm text-muted-foreground mb-2">
+          Which metric to show in the menu bar
+        </p>
+        <div className="bg-muted/50 rounded-lg p-1">
+          <div className="flex gap-1" role="radiogroup" aria-label="Tray metric">
+            {TRAY_METRIC_OPTIONS.map((option) => {
+              const isActive = option.value === trayMetric;
+              return (
+                <Button
+                  key={option.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={isActive}
+                  variant={isActive ? "default" : "outline"}
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => onTrayMetricChange(option.value)}
+                >
+                  {option.label}
                 </Button>
               );
             })}

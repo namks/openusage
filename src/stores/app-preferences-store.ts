@@ -7,12 +7,14 @@ import {
   DEFAULT_RESET_TIMER_DISPLAY_MODE,
   DEFAULT_START_ON_LOGIN,
   DEFAULT_THEME_MODE,
+  DEFAULT_TRAY_METRIC,
   type AutoUpdateIntervalMinutes,
   type DisplayMode,
   type GlobalShortcut,
   type MenubarIconStyle,
   type ResetTimerDisplayMode,
   type ThemeMode,
+  type TrayMetric,
 } from "@/lib/settings"
 
 type AppPreferencesStore = {
@@ -23,6 +25,7 @@ type AppPreferencesStore = {
   globalShortcut: GlobalShortcut
   startOnLogin: boolean
   menubarIconStyle: MenubarIconStyle
+  trayMetric: TrayMetric
   setAutoUpdateInterval: (value: AutoUpdateIntervalMinutes) => void
   setThemeMode: (value: ThemeMode) => void
   setDisplayMode: (value: DisplayMode) => void
@@ -30,6 +33,7 @@ type AppPreferencesStore = {
   setGlobalShortcut: (value: GlobalShortcut) => void
   setStartOnLogin: (value: boolean) => void
   setMenubarIconStyle: (value: MenubarIconStyle) => void
+  setTrayMetric: (value: TrayMetric) => void
   resetState: () => void
 }
 
@@ -41,6 +45,7 @@ const initialState = {
   globalShortcut: DEFAULT_GLOBAL_SHORTCUT,
   startOnLogin: DEFAULT_START_ON_LOGIN,
   menubarIconStyle: DEFAULT_MENUBAR_ICON_STYLE,
+  trayMetric: DEFAULT_TRAY_METRIC,
 }
 
 export const useAppPreferencesStore = create<AppPreferencesStore>((set) => ({
@@ -52,5 +57,6 @@ export const useAppPreferencesStore = create<AppPreferencesStore>((set) => ({
   setGlobalShortcut: (value) => set({ globalShortcut: value }),
   setStartOnLogin: (value) => set({ startOnLogin: value }),
   setMenubarIconStyle: (value) => set({ menubarIconStyle: value }),
+  setTrayMetric: (value) => set({ trayMetric: value }),
   resetState: () => set(initialState),
 }))

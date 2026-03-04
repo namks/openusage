@@ -57,6 +57,8 @@ const defaultProps = {
   onResetTimerDisplayModeChange: vi.fn(),
   menubarIconStyle: "provider" as const,
   onMenubarIconStyleChange: vi.fn(),
+  trayMetric: "session" as const,
+  onTrayMetricChange: vi.fn(),
   traySettingsPreview: {
     bars: [{ id: "a", fraction: 0.7 }],
     providerBars: [{ id: "a", fraction: 0.7 }],

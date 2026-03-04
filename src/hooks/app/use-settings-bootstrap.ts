@@ -20,6 +20,7 @@ import {
   loadDisplayMode,
   loadGlobalShortcut,
   loadMenubarIconStyle,
+  loadTrayMetric,
   migrateLegacyTraySettings,
   loadPluginSettings,
   loadResetTimerDisplayMode,
@@ -34,6 +35,8 @@ import {
   type PluginSettings,
   type ResetTimerDisplayMode,
   type ThemeMode,
+  type TrayMetric,
+  DEFAULT_TRAY_METRIC,
 } from "@/lib/settings"
 
 type UseSettingsBootstrapArgs = {
@@ -46,6 +49,7 @@ type UseSettingsBootstrapArgs = {
   setGlobalShortcut: (value: GlobalShortcut) => void
   setStartOnLogin: (value: boolean) => void
   setMenubarIconStyle: (value: MenubarIconStyle) => void
+  setTrayMetric: (value: TrayMetric) => void
   setLoadingForPlugins: (ids: string[]) => void
   setErrorForPlugins: (ids: string[], error: string) => void
   startBatch: (pluginIds?: string[]) => Promise<string[] | undefined>
@@ -61,6 +65,7 @@ export function useSettingsBootstrap({
   setGlobalShortcut,
   setStartOnLogin,
   setMenubarIconStyle,
+  setTrayMetric,
   setLoadingForPlugins,
   setErrorForPlugins,
   startBatch,
@@ -153,6 +158,13 @@ export function useSettingsBootstrap({
           console.error("Failed to load menubar icon style:", error)
         }
 
+        let storedTrayMetric = DEFAULT_TRAY_METRIC
+        try {
+          storedTrayMetric = await loadTrayMetric()
+        } catch (error) {
+          console.error("Failed to load tray metric:", error)
+        }
+
         if (isMounted) {
           setPluginSettings(normalized)
           setAutoUpdateInterval(storedInterval)
@@ -162,6 +174,7 @@ export function useSettingsBootstrap({
           setGlobalShortcut(storedGlobalShortcut)
           setStartOnLogin(storedStartOnLogin)
           setMenubarIconStyle(storedMenubarIconStyle)
+          setTrayMetric(storedTrayMetric)
 
           const enabledIds = getEnabledPluginIds(normalized)
           setLoadingForPlugins(enabledIds)
@@ -192,6 +205,7 @@ export function useSettingsBootstrap({
     setGlobalShortcut,
     setLoadingForPlugins,
     setMenubarIconStyle,
+    setTrayMetric,
     migrateLegacyTraySettings,
     setPluginSettings,
     setPluginsMeta,

@@ -5,10 +5,12 @@ import {
   saveMenubarIconStyle,
   saveResetTimerDisplayMode,
   saveThemeMode,
+  saveTrayMetric,
   type DisplayMode,
   type MenubarIconStyle,
   type ResetTimerDisplayMode,
   type ThemeMode,
+  type TrayMetric,
 } from "@/lib/settings"
 
 type ScheduleTrayIconUpdate = (reason: "probe" | "settings" | "init", delayMs?: number) => void
@@ -19,6 +21,7 @@ type UseSettingsDisplayActionsArgs = {
   resetTimerDisplayMode: ResetTimerDisplayMode
   setResetTimerDisplayMode: (value: ResetTimerDisplayMode) => void
   setMenubarIconStyle: (value: MenubarIconStyle) => void
+  setTrayMetric: (value: TrayMetric) => void
   scheduleTrayIconUpdate: ScheduleTrayIconUpdate
 }
 
@@ -28,6 +31,7 @@ export function useSettingsDisplayActions({
   resetTimerDisplayMode,
   setResetTimerDisplayMode,
   setMenubarIconStyle,
+  setTrayMetric,
   scheduleTrayIconUpdate,
 }: UseSettingsDisplayActionsArgs) {
   const handleThemeModeChange = useCallback((mode: ThemeMode) => {
@@ -69,11 +73,21 @@ export function useSettingsDisplayActions({
     })
   }, [scheduleTrayIconUpdate, setMenubarIconStyle])
 
+  const handleTrayMetricChange = useCallback((metric: TrayMetric) => {
+    track("setting_changed", { setting: "tray_metric", value: metric })
+    setTrayMetric(metric)
+    scheduleTrayIconUpdate("settings", 0)
+    void saveTrayMetric(metric).catch((error) => {
+      console.error("Failed to save tray metric:", error)
+    })
+  }, [scheduleTrayIconUpdate, setTrayMetric])
+
   return {
     handleThemeModeChange,
     handleDisplayModeChange,
     handleResetTimerDisplayModeChange,
     handleResetTimerDisplayModeToggle,
     handleMenubarIconStyleChange,
+    handleTrayMetricChange,
   }
 }

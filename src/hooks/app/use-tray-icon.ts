@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { resolveResource } from "@tauri-apps/api/path"
 import { TrayIcon } from "@tauri-apps/api/tray"
 import type { PluginMeta } from "@/lib/plugin-types"
-import type { DisplayMode, MenubarIconStyle, PluginSettings } from "@/lib/settings"
+import type { DisplayMode, MenubarIconStyle, PluginSettings, TrayMetric } from "@/lib/settings"
 import { getEnabledPluginIds } from "@/lib/settings"
 import { getTrayIconSizePx, renderTrayBarsIcon } from "@/lib/tray-bars-icon"
 import { getTrayPrimaryBars, type TrayPrimaryBar } from "@/lib/tray-primary-progress"
@@ -16,6 +16,7 @@ type UseTrayIconArgs = {
   pluginStates: Record<string, PluginState>
   displayMode: DisplayMode
   menubarIconStyle: MenubarIconStyle
+  trayMetric: TrayMetric
   activeView: string
 }
 
@@ -60,6 +61,7 @@ export function useTrayIcon({
   pluginStates,
   displayMode,
   menubarIconStyle,
+  trayMetric,
   activeView,
 }: UseTrayIconArgs) {
   const trayRef = useRef<TrayIcon | null>(null)
@@ -77,6 +79,7 @@ export function useTrayIcon({
   const pluginStatesRef = useRef(pluginStates)
   const displayModeRef = useRef(displayMode)
   const menubarIconStyleRef = useRef(menubarIconStyle)
+  const trayMetricRef = useRef(trayMetric)
   const activeViewRef = useRef(activeView)
   const lastTrayProviderIdRef = useRef<string | null>(null)
 
@@ -99,6 +102,10 @@ export function useTrayIcon({
   useEffect(() => {
     menubarIconStyleRef.current = menubarIconStyle
   }, [menubarIconStyle])
+
+  useEffect(() => {
+    trayMetricRef.current = trayMetric
+  }, [trayMetric])
 
   useEffect(() => {
     activeViewRef.current = activeView
@@ -196,12 +203,15 @@ export function useTrayIcon({
         trayProviderId = enabledPluginIds[0] ?? null
       }
 
+      const currentTrayMetric = trayMetricRef.current
+
       const barsForPreview = getTrayPrimaryBars({
         pluginsMeta: pluginsMetaRef.current,
         pluginSettings: currentSettings,
         pluginStates: pluginStatesRef.current,
         maxBars: 4,
         displayMode: displayModeRef.current,
+        trayMetric: currentTrayMetric,
       })
 
       const providerBars = trayProviderId
@@ -209,9 +219,10 @@ export function useTrayIcon({
             pluginsMeta: pluginsMetaRef.current,
             pluginSettings: currentSettings,
             pluginStates: pluginStatesRef.current,
-            maxBars: 1,
+            maxBars: currentTrayMetric === "both" ? 2 : 1,
             displayMode: displayModeRef.current,
             pluginId: trayProviderId,
+            trayMetric: currentTrayMetric,
           })
         : []
 
@@ -261,6 +272,32 @@ export function useTrayIcon({
           bars: providerBars,
           sizePx,
           style: "donut",
+          providerIconUrl,
+        })
+          .then(async (img) => {
+            await tray.setIcon(img)
+            await tray.setIconAsTemplate(true)
+            await setTrayTitle("")
+          })
+          .catch((e) => {
+            console.error("Failed to update tray icon:", e)
+          })
+          .finally(() => {
+            finalizeUpdate()
+          })
+        return
+      }
+
+      if (currentTrayMetric === "both" && providerBars.length === 2) {
+        const lines = providerBars.map((b) => {
+          const prefix = b.label === "Session" ? "S" : "W"
+          return `${prefix} ${formatTrayPercentText(b.fraction)}`
+        })
+        renderTrayBarsIcon({
+          bars: providerBars.slice(0, 1),
+          sizePx,
+          style: "provider",
+          percentLines: lines,
           providerIconUrl,
         })
           .then(async (img) => {
@@ -338,7 +375,7 @@ export function useTrayIcon({
   useEffect(() => {
     if (!trayReady) return
     scheduleTrayIconUpdate("settings", 0)
-  }, [activeView, menubarIconStyle, scheduleTrayIconUpdate, trayReady])
+  }, [activeView, menubarIconStyle, trayMetric, scheduleTrayIconUpdate, trayReady])
 
   useEffect(() => {
     return () => {

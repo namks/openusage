@@ -1,6 +1,6 @@
 import type { PluginMeta, PluginOutput } from "@/lib/plugin-types"
 import type { PluginSettings } from "@/lib/settings"
-import { DEFAULT_DISPLAY_MODE, type DisplayMode } from "@/lib/settings"
+import { DEFAULT_DISPLAY_MODE, type DisplayMode, type TrayMetric } from "@/lib/settings"
 import { clamp01 } from "@/lib/utils"
 
 type PluginState = {
@@ -11,6 +11,7 @@ type PluginState = {
 
 export type TrayPrimaryBar = {
   id: string
+  label?: string
   fraction?: number
 }
 
@@ -23,6 +24,11 @@ function isProgressLine(line: PluginOutput["lines"][number]): line is ProgressLi
   return line.type === "progress"
 }
 
+const TRAY_METRIC_LABEL_MAP: Record<string, string> = {
+  session: "Session",
+  weekly: "Weekly",
+}
+
 export function getTrayPrimaryBars(args: {
   pluginsMeta: PluginMeta[]
   pluginSettings: PluginSettings | null
@@ -30,6 +36,7 @@ export function getTrayPrimaryBars(args: {
   maxBars?: number
   displayMode?: DisplayMode
   pluginId?: string
+  trayMetric?: TrayMetric
 }): TrayPrimaryBar[] {
   const {
     pluginsMeta,
@@ -38,6 +45,7 @@ export function getTrayPrimaryBars(args: {
     maxBars = 4,
     displayMode = DEFAULT_DISPLAY_MODE,
     pluginId,
+    trayMetric,
   } = args
   if (!pluginSettings) return []
 
@@ -52,35 +60,62 @@ export function getTrayPrimaryBars(args: {
     if (disabled.has(id)) continue
     const meta = metaById.get(id)
     if (!meta) continue
-    
+
     // Skip if no primary candidates defined
     if (!meta.primaryCandidates || meta.primaryCandidates.length === 0) continue
 
     const state = pluginStates[id]
     const data = state?.data ?? null
 
-    let fraction: number | undefined
-    if (data) {
-      // Find first candidate that exists in runtime data
-      const primaryLabel = meta.primaryCandidates.find((label) =>
-        data.lines.some((line) => isProgressLine(line) && line.label === label)
-      )
-      if (primaryLabel) {
-        const primaryLine = data.lines.find(
-          (line): line is ProgressLine =>
-            isProgressLine(line) && line.label === primaryLabel
+    if (trayMetric === "both") {
+      // Return up to 2 bars per plugin: one for Session, one for Weekly
+      for (const targetLabel of ["Session", "Weekly"]) {
+        if (!meta.primaryCandidates.includes(targetLabel)) continue
+        let fraction: number | undefined
+        if (data) {
+          const line = data.lines.find(
+            (l): l is ProgressLine => isProgressLine(l) && l.label === targetLabel
+          )
+          if (line && line.limit > 0) {
+            const shownAmount =
+              displayMode === "used" ? line.used : line.limit - line.used
+            fraction = clamp01(shownAmount / line.limit)
+          }
+        }
+        out.push({ id, label: targetLabel, fraction })
+        if (out.length >= maxBars) break
+      }
+    } else {
+      // Filter candidates by trayMetric label if specified
+      const filterLabel = trayMetric ? TRAY_METRIC_LABEL_MAP[trayMetric] : undefined
+      const candidates = filterLabel
+        ? meta.primaryCandidates.filter((c) => c === filterLabel)
+        : meta.primaryCandidates
+
+      let fraction: number | undefined
+      let matchedLabel: string | undefined
+      if (data && candidates.length > 0) {
+        const primaryLabel = candidates.find((label) =>
+          data.lines.some((line) => isProgressLine(line) && line.label === label)
         )
-        if (primaryLine && primaryLine.limit > 0) {
-          const shownAmount =
-            displayMode === "used"
-              ? primaryLine.used
-              : primaryLine.limit - primaryLine.used
-          fraction = clamp01(shownAmount / primaryLine.limit)
+        if (primaryLabel) {
+          matchedLabel = primaryLabel
+          const primaryLine = data.lines.find(
+            (line): line is ProgressLine =>
+              isProgressLine(line) && line.label === primaryLabel
+          )
+          if (primaryLine && primaryLine.limit > 0) {
+            const shownAmount =
+              displayMode === "used"
+                ? primaryLine.used
+                : primaryLine.limit - primaryLine.used
+            fraction = clamp01(shownAmount / primaryLine.limit)
+          }
         }
       }
-    }
 
-    out.push({ id, fraction })
+      out.push({ id, label: matchedLabel, fraction })
+    }
     if (out.length >= maxBars) break
   }
 

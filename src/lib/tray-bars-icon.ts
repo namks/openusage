@@ -105,6 +105,7 @@ function getSvgLayout(args: {
   sizePx: number
   style: MenubarIconStyle
   percentText?: string
+  percentLines?: string[]
 }): {
   width: number
   height: number
@@ -115,9 +116,12 @@ function getSvgLayout(args: {
   textX: number
   textY: number
   fontSize: number
+  percentLines?: string[]
+  lineFontSize?: number
 } {
-  const { sizePx, style, percentText } = args
-  const hasPercentText = typeof percentText === "string" && percentText.length > 0
+  const { sizePx, style, percentText, percentLines } = args
+  const hasPercentLines = Array.isArray(percentLines) && percentLines.length === 2
+  const hasPercentText = !hasPercentLines && typeof percentText === "string" && percentText.length > 0
   const verticalNudgePx = 1
   const pad = Math.max(1, Math.round(sizePx * 0.08)) // ~2px at 24–36px
   const gap = Math.max(1, Math.round(sizePx * 0.03)) // ~1px at 36px
@@ -126,7 +130,6 @@ function getSvgLayout(args: {
   const barsX = pad
   const barsWidth = sizePx - 2 * pad
   const fontSize = Math.max(9, Math.round(sizePx * 0.72))
-  const textWidth = hasPercentText ? estimateTextWidthPx(percentText, fontSize) : 0
   // Optical correction + global nudge down to align with the tray slot center.
   const textY = Math.round(sizePx / 2) + 1 + verticalNudgePx
 
@@ -144,6 +147,32 @@ function getSvgLayout(args: {
       fontSize,
     }
   }
+
+  if (hasPercentLines) {
+    const lineFontSize = Math.max(8, Math.round(fontSize * 0.65))
+    const wider = percentLines.reduce(
+      (max, l) => Math.max(max, estimateTextWidthPx(l, lineFontSize)),
+      0
+    )
+    const textGap = Math.max(2, Math.round(sizePx * 0.08))
+    const textAreaWidth = Math.max(20, wider + pad * 2)
+    const rightPad = pad
+    return {
+      width: sizePx + textGap + textAreaWidth + rightPad,
+      height,
+      pad,
+      gap,
+      barsX,
+      barsWidth,
+      textX: sizePx + textGap,
+      textY,
+      fontSize,
+      percentLines,
+      lineFontSize,
+    }
+  }
+
+  const textWidth = hasPercentText ? estimateTextWidthPx(percentText!, fontSize) : 0
 
   if (!hasPercentText) {
     return {
@@ -181,9 +210,10 @@ export function makeTrayBarsSvg(args: {
   sizePx: number
   style?: MenubarIconStyle
   percentText?: string
+  percentLines?: string[]
   providerIconUrl?: string
 }): string {
-  const { bars, sizePx, style = "provider", percentText, providerIconUrl } = args
+  const { bars, sizePx, style = "provider", percentText, percentLines, providerIconUrl } = args
   const barsForStyle = style === "bars" ? bars : bars.slice(0, 1)
   // Intentionally render a single empty track when bars mode has no data yet
   // so the tray icon keeps a stable shape during loading/initialization.
@@ -193,6 +223,7 @@ export function makeTrayBarsSvg(args: {
     sizePx,
     style,
     percentText: text,
+    percentLines,
   })
 
   const width = layout.width
@@ -331,7 +362,37 @@ export function makeTrayBarsSvg(args: {
     }
   }
 
-  if (text) {
+  if (layout.percentLines && layout.lineFontSize) {
+    const lf = layout.lineFontSize
+    const lineGap = Math.max(1, Math.round(lf * 0.2))
+    const lineHeight = lf
+    const totalTextH = 2 * lineHeight + lineGap
+    const startY = Math.round((sizePx - totalTextH) / 2)
+    const baseline1 = startY + Math.round(lineHeight * 0.78)
+    const baseline2 = baseline1 + lineHeight + lineGap
+    const textRightX = width - layout.pad
+    const font = `font-family="-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif" font-size="${lf}" font-weight="700"`
+
+    for (const [idx, line] of layout.percentLines.entries()) {
+      const by = idx === 0 ? baseline1 : baseline2
+      const spaceIdx = line.indexOf(" ")
+      if (spaceIdx > 0) {
+        const prefix = line.slice(0, spaceIdx)
+        const value = line.slice(spaceIdx + 1)
+        // Prefix left-aligned, value right-aligned
+        parts.push(
+          `<text x="${layout.textX}" y="${by}" fill="black" ${font}>${escapeXmlText(prefix)}</text>`
+        )
+        parts.push(
+          `<text x="${textRightX}" y="${by}" fill="black" ${font} text-anchor="end">${escapeXmlText(value)}</text>`
+        )
+      } else {
+        parts.push(
+          `<text x="${layout.textX}" y="${by}" fill="black" ${font}>${escapeXmlText(line)}</text>`
+        )
+      }
+    }
+  } else if (text) {
     parts.push(
       `<text x="${layout.textX}" y="${layout.textY}" fill="black" font-family="-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif" font-size="${layout.fontSize}" font-weight="700" dominant-baseline="middle">${escapeXmlText(text)}</text>`
     )
@@ -379,21 +440,24 @@ export async function renderTrayBarsIcon(args: {
   sizePx: number
   style?: MenubarIconStyle
   percentText?: string
+  percentLines?: string[]
   providerIconUrl?: string
 }): Promise<Image> {
-  const { bars, sizePx, style = "provider", percentText, providerIconUrl } = args
+  const { bars, sizePx, style = "provider", percentText, percentLines, providerIconUrl } = args
   const text = normalizePercentText(percentText)
   const svg = makeTrayBarsSvg({
     bars,
     sizePx,
     style,
     percentText: text,
+    percentLines,
     providerIconUrl,
   })
   const layout = getSvgLayout({
     sizePx,
     style,
     percentText: text,
+    percentLines,
   })
   const rgba = await rasterizeSvgToRgba(svg, layout.width, layout.height)
   return await Image.new(rgba, layout.width, layout.height)

@@ -54,6 +54,8 @@ function App() {
     setDisplayMode,
     menubarIconStyle,
     setMenubarIconStyle,
+    trayMetric,
+    setTrayMetric,
     resetTimerDisplayMode,
     setResetTimerDisplayMode,
     setGlobalShortcut,
@@ -68,6 +70,8 @@ function App() {
       setDisplayMode: state.setDisplayMode,
       menubarIconStyle: state.menubarIconStyle,
       setMenubarIconStyle: state.setMenubarIconStyle,
+      trayMetric: state.trayMetric,
+      setTrayMetric: state.setTrayMetric,
       resetTimerDisplayMode: state.resetTimerDisplayMode,
       setResetTimerDisplayMode: state.setResetTimerDisplayMode,
       setGlobalShortcut: state.setGlobalShortcut,
@@ -101,6 +105,7 @@ function App() {
     pluginStates,
     displayMode,
     menubarIconStyle,
+    trayMetric,
     activeView,
   })
 
@@ -117,6 +122,7 @@ function App() {
     setThemeMode,
     setDisplayMode,
     setMenubarIconStyle,
+    setTrayMetric,
     setResetTimerDisplayMode,
     setGlobalShortcut,
     setStartOnLogin,
@@ -133,12 +139,14 @@ function App() {
     handleResetTimerDisplayModeChange,
     handleResetTimerDisplayModeToggle,
     handleMenubarIconStyleChange,
+    handleTrayMetricChange,
   } = useSettingsDisplayActions({
     setThemeMode,
     setDisplayMode,
     resetTimerDisplayMode,
     setResetTimerDisplayMode,
     setMenubarIconStyle,
+    setTrayMetric,
     scheduleTrayIconUpdate,
   })
 
@@ -246,6 +254,7 @@ function App() {
         onResetTimerDisplayModeChange: handleResetTimerDisplayModeChange,
         onResetTimerDisplayModeToggle: handleResetTimerDisplayModeToggle,
         onMenubarIconStyleChange: handleMenubarIconStyleChange,
+        onTrayMetricChange: handleTrayMetricChange,
         traySettingsPreview,
         onGlobalShortcutChange: handleGlobalShortcutChange,
         onStartOnLoginChange: handleStartOnLoginChange,
