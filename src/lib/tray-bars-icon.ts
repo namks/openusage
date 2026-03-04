@@ -373,15 +373,17 @@ export function makeTrayBarsSvg(args: {
     const textRightX = width - layout.pad
     const font = `font-family="-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif" font-size="${lf}" font-weight="700"`
 
+    const monoFont = `font-family="Menlo,monospace" font-size="${lf}" font-weight="700"`
+
     for (const [idx, line] of layout.percentLines.entries()) {
       const by = idx === 0 ? baseline1 : baseline2
       const spaceIdx = line.indexOf(" ")
       if (spaceIdx > 0) {
         const prefix = line.slice(0, spaceIdx)
         const value = line.slice(spaceIdx + 1)
-        // Prefix left-aligned, value right-aligned
+        // Prefix left-aligned in monospace (equal width), value right-aligned
         parts.push(
-          `<text x="${layout.textX}" y="${by}" fill="black" ${font}>${escapeXmlText(prefix)}</text>`
+          `<text x="${layout.textX}" y="${by}" fill="black" ${monoFont}>${escapeXmlText(prefix)}</text>`
         )
         parts.push(
           `<text x="${textRightX}" y="${by}" fill="black" ${font} text-anchor="end">${escapeXmlText(value)}</text>`
