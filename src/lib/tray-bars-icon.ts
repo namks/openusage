@@ -373,7 +373,7 @@ export function makeTrayBarsSvg(args: {
     const textRightX = width - layout.pad
     const font = `font-family="-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif" font-size="${lf}" font-weight="700"`
 
-    const monoFont = `font-family="Menlo,monospace" font-size="${lf}" font-weight="700"`
+    const monoFont = `font-family="SFMono-Regular,'SF Mono',Menlo,monospace" font-size="${lf}" font-weight="700"`
 
     for (const [idx, line] of layout.percentLines.entries()) {
       const by = idx === 0 ? baseline1 : baseline2
