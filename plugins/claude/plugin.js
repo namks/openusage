@@ -266,7 +266,7 @@
         Accept: "application/json",
         "Content-Type": "application/json",
         "anthropic-beta": "oauth-2025-04-20",
-        "User-Agent": "OpenUsage",
+        "User-Agent": "claude-code/2.1.69",
       },
       timeoutMs: 10000,
     })
@@ -330,6 +330,11 @@
     const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/)
     if (isoMatch) {
       return isoMatch[1] + "-" + isoMatch[2] + "-" + isoMatch[3]
+    }
+
+    const isoDatePrefixMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})(?:[Tt\s]|$)/)
+    if (isoDatePrefixMatch) {
+      return isoDatePrefixMatch[1] + "-" + isoDatePrefixMatch[2] + "-" + isoDatePrefixMatch[3]
     }
 
     const compactMatch = value.match(/^(\d{4})(\d{2})(\d{2})$/)
