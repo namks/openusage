@@ -31,7 +31,7 @@ export function useProbeState({ onProbeResult }: UseProbeStateArgs) {
       for (const id of ids) {
         const existing = prev[id]
         next[id] = {
-          data: null,
+          data: existing?.data ?? null,
           loading: true,
           error: null,
           lastManualRefreshAt: existing?.lastManualRefreshAt ?? null,

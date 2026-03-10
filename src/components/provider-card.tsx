@@ -299,11 +299,11 @@ export function ProviderCard({
         )}
         {error && <PluginError message={error} />}
 
-        {loading && !error && (
+        {loading && !error && filteredLines.length === 0 && (
           <SkeletonLines lines={filteredSkeletonLines} />
         )}
 
-        {!loading && !error && (
+        {!error && filteredLines.length > 0 && (
           <div className="space-y-4">
             {groupLinesByType(filteredLines).map((group, gi) =>
               group.kind === "text" ? (
